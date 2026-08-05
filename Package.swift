@@ -8,7 +8,8 @@ let package = Package(
         .library(name: "Subprocess", targets: ["Subprocess"]),
     ],
     targets: [
-        .target(name: "Subprocess", path: "Sources"),
+        .target(name: "Subprocess", path: "Sources",
+                swiftSettings: [.unsafeFlags(["-strict-concurrency=complete"])]),
         .testTarget(name: "SubprocessTests", dependencies: ["Subprocess"], path: "Tests"),
     ]
 )
