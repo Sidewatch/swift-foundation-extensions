@@ -1,0 +1,14 @@
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "Subprocess",
+    platforms: [.macOS(.v12)],
+    products: [
+        .library(name: "Subprocess", targets: ["Subprocess"]),
+    ],
+    targets: [
+        .target(name: "Subprocess", path: "Sources"),
+        .testTarget(name: "SubprocessTests", dependencies: ["Subprocess"], path: "Tests"),
+    ]
+)
