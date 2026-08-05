@@ -95,21 +95,45 @@ public enum Subprocess {
 
         // Drain BOTH streams concurrently, then wait. This ordering is the whole point of
         // the type — see the note above.
-        var outData = Data(), errData = Data()
+        //
+        // The two reads land in a shared box rather than in captured `var`s. Capturing vars
+        // and mutating them from the two queues is what this originally did, and it works,
+        // but only by an argument the compiler cannot check — so under strict concurrency it
+        // warned, and a warning that must be read as "fine, actually" every time is worse
+        // than no warning at all.
+        let sink = StreamSink()
         let group = DispatchGroup()
         group.enter()
         DispatchQueue.global(qos: .utility).async {
-            outData = outPipe.fileHandleForReading.readDataToEndOfFile()
+            sink.setOut(outPipe.fileHandleForReading.readDataToEndOfFile())
             group.leave()
         }
         group.enter()
         DispatchQueue.global(qos: .utility).async {
-            errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+            sink.setErr(errPipe.fileHandleForReading.readDataToEndOfFile())
             group.leave()
         }
         group.wait()
         process.waitUntilExit()
-        return Result(status: process.terminationStatus, stdout: outData, stderr: errData)
+        return Result(status: process.terminationStatus, stdout: sink.out, stderr: sink.err)
+    }
+
+    /// Collects the two drained streams from the queues that read them.
+    ///
+    /// Locked rather than merely `@unchecked Sendable`: the `DispatchGroup` join does order
+    /// the writes before the read, so an unsynchronised box would be correct today, but that
+    /// correctness lives in a comment two call sites away. The lock is uncontended (three
+    /// acquisitions per process launch, against work measured in milliseconds of I/O), so it
+    /// costs nothing worth counting and stays correct if the drain logic is ever reshaped.
+    private final class StreamSink: @unchecked Sendable {
+        private let lock = NSLock()
+        private var outStorage = Data()
+        private var errStorage = Data()
+
+        func setOut(_ d: Data) { lock.lock(); outStorage = d; lock.unlock() }
+        func setErr(_ d: Data) { lock.lock(); errStorage = d; lock.unlock() }
+        var out: Data { lock.lock(); defer { lock.unlock() }; return outStorage }
+        var err: Data { lock.lock(); defer { lock.unlock() }; return errStorage }
     }
 
     /// Absolute path of `tool` on `PATH`, or nil when it is not installed.
