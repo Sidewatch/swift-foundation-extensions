@@ -1,16 +1,16 @@
-# Swift Subprocess
+# Swift ProcessRunner
 
 A one-file, dependency-free runner for external tools: launch, drain both pipes concurrently, return status + stdout + stderr.
 
 It exists because "launch a tool, read its output" was hand-rolled in four places and only some
 got it right: a `Pipe` you never drain deadlocks the moment the child writes more than ~64 KB.
-`Subprocess.run` drains stdout and stderr on their own threads and waits for both.
+`ProcessRunner.run` drains stdout and stderr on their own threads and waits for both.
 
 ## Features
 
-- `Subprocess.run(executable, arguments:, currentDirectory:, environment:)` → `Result` with `status`, `stdout`, `stderr`
+- `ProcessRunner.run(executable, arguments:, currentDirectory:, environment:)` → `Result` with `status`, `stdout`, `stderr`
 - `Result.outputText`, `errorText`, `trimmedOutput`, `succeeded`, `launched`
-- `Subprocess.which(tool)` → the path `PATH` resolves the tool to, or nil
+- `ProcessRunner.which(tool)` → the path `PATH` resolves the tool to, or nil
 - No dependencies; Swift 6 language mode
 
 ## Requirements
@@ -23,15 +23,15 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 ### Swift Package Manager
 
 ```swift
-.package(url: "https://github.com/Sidewatch/swift-subprocess.git", from: "0.1.0")
+.package(url: "https://github.com/Sidewatch/swift-process-runner.git", from: "0.1.0")
 ```
 
 ## Usage
 
 ```swift
-import Subprocess
+import ProcessRunner
 
-let r = Subprocess.run("/usr/bin/git", arguments: ["status", "--porcelain"], currentDirectory: repo)
+let r = ProcessRunner.run("/usr/bin/git", arguments: ["status", "--porcelain"], currentDirectory: repo)
 if r.succeeded { print(r.outputText) } else { print(r.errorText) }
 ```
 

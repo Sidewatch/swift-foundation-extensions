@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "Subprocess",
+    name: "ProcessRunner",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "Subprocess", targets: ["Subprocess"]),
+        .library(name: "ProcessRunner", targets: ["ProcessRunner"]),
     ],
     targets: [
-        .target(name: "Subprocess", path: "Sources",
+        .target(name: "ProcessRunner", path: "Sources",
                 swiftSettings: [.swiftLanguageMode(.v6)]),
-        .testTarget(name: "SubprocessTests", dependencies: ["Subprocess"], path: "Tests"),
+        .testTarget(name: "SubprocessTests", dependencies: ["ProcessRunner"], path: "Tests"),
     ]
 )

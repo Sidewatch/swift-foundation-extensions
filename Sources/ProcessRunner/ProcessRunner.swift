@@ -1,6 +1,6 @@
 //
-//  Subprocess.swift
-//  Subprocess
+//  ProcessRunner.swift
+//  ProcessRunner
 //
 //  Run a command-line tool and collect its output, without the deadlock.
 //
@@ -19,7 +19,7 @@ import Foundation
 /// and one attached undrained pipes to BOTH streams and waited (a hang waiting for a verbose
 /// enough command). Draining both streams concurrently, always, is the only shape that
 /// cannot deadlock — so it is the only shape this type offers.
-public enum Subprocess {
+public enum ProcessRunner {
 
     /// What a finished process produced.
     public struct Result: Equatable, Sendable {
