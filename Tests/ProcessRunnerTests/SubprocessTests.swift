@@ -1,5 +1,5 @@
 //
-//  SubprocessTests.swift
+//  ProcessRunnerTests.swift
 //  Tests for ProcessRunner
 //
 //  Created by David Sherlock on 8/5/26.
@@ -8,7 +8,7 @@
 import XCTest
 @testable import ProcessRunner
 
-final class SubprocessTests: XCTestCase {
+final class ProcessRunnerTests: XCTestCase {
 
     func testCapturesStdoutAndStatus() {
         let r = ProcessRunner.run("/bin/echo", ["hello"])

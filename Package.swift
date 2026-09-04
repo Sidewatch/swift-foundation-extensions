@@ -10,6 +10,6 @@ let package = Package(
     targets: [
         .target(name: "ProcessRunner", path: "Sources",
                 swiftSettings: [.swiftLanguageMode(.v6)]),
-        .testTarget(name: "SubprocessTests", dependencies: ["ProcessRunner"], path: "Tests"),
+        .testTarget(name: "ProcessRunnerTests", dependencies: ["ProcessRunner"], path: "Tests"),
     ]
 )
