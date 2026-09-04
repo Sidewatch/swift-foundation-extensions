@@ -3,13 +3,13 @@ import PackageDescription
 
 let package = Package(
     name: "Subprocess",
-    platforms: [.macOS(.v12)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(name: "Subprocess", targets: ["Subprocess"]),
     ],
     targets: [
         .target(name: "Subprocess", path: "Sources",
-                swiftSettings: [.unsafeFlags(["-strict-concurrency=complete"])]),
+                swiftSettings: [.swiftLanguageMode(.v6)]),
         .testTarget(name: "SubprocessTests", dependencies: ["Subprocess"], path: "Tests"),
     ]
 )
