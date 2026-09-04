@@ -31,11 +31,11 @@ public enum ProcessRunner {
         /// `stdout` as UTF-8 with surrounding whitespace trimmed — the common case for
         /// tools whose output is one line (`which`, `git rev-parse`).
         public var trimmedOutput: String {
-            String(data: stdout, encoding: .utf8)?
+            stdout.utf8String?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         }
-        public var outputText: String { String(data: stdout, encoding: .utf8) ?? "" }
-        public var errorText: String { String(data: stderr, encoding: .utf8) ?? "" }
+        public var outputText: String { stdout.utf8String ?? "" }
+        public var errorText: String { stderr.utf8String ?? "" }
         public var launched: Bool { status != -1 }
         public var succeeded: Bool { status == 0 }
     }
