@@ -16,7 +16,7 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 ## Requirements
 
 - macOS 14+
-- Swift 6.0+ (Swift 6 language mode)
+- Swift 6.2+ (Swift 6 language mode)
 
 ## Installation
 
