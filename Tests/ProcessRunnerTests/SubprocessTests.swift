@@ -1,6 +1,9 @@
 //
-//  ProcessRunnerTests.swift
-//  Tests for ProcessRunner
+//  SubprocessTests.swift
+//  ProcessRunnerTests
+//
+//  Tests for `ProcessRunner.run`: captured stdout, stderr and exit status, the trimmed-output
+//  convenience, and failure reporting.
 //
 //  Created by David Sherlock on 8/5/26.
 //
@@ -8,6 +11,8 @@
 import XCTest
 @testable import ProcessRunner
 
+/// Tests for `ProcessRunner.run`: captured stdout, stderr and exit status, the trimmed-output
+/// convenience, and failure reporting.
 final class ProcessRunnerTests: XCTestCase {
 
     func testCapturesStdoutAndStatus() {
