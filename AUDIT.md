@@ -20,6 +20,12 @@ dead-code and risk-pattern scans, docs drift); line-by-line logic review was tar
 - Build: clean. Tests: green.
 - Nothing to fix in this package.
 
+## Logic review — 18 Sep 2026 (the whole package, line by line)
+
+Nothing to fix. Checked: stdout and stderr are drained on their own queues and joined through a
+`DispatchGroup` before `waitUntilExit`, so a child that fills one pipe cannot deadlock the parent;
+the locked result sink; the optional stdin pipe; the launch-failure path.
+
 ## Known non-issues (do not "fix" these again)
 
 - None recorded.
@@ -27,3 +33,4 @@ dead-code and risk-pattern scans, docs drift); line-by-line logic review was tar
 ## History
 
 - 17 Sep 2026 — full audit (app + all 20 libraries), Claude with David.
+- 18 Sep 2026 — logic review (every source and test file, line by line), Claude with David.
