@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 
 /// Runs external tools and returns what they printed.
 ///
@@ -27,6 +28,8 @@ public enum ProcessRunner {
         public let status: Int32
         public let stdout: Data
         public let stderr: Data
+        /// True when the process outlived its `timeout` and was terminated.
+        public var timedOut = false
 
         /// `stdout` as UTF-8 with surrounding whitespace trimmed — the common case for
         /// tools whose output is one line (`which`, `git rev-parse`).
@@ -57,13 +60,17 @@ public enum ProcessRunner {
     ///   - input: Written to the child's stdin and closed; nil leaves stdin inherited.
     ///   - environment: Extra variables layered over the process environment.
     ///   - augmentPATH: Append ``guiPathSupplement`` to `PATH` (default true).
-    /// - Returns: The result; `status == -1` when the tool could not be launched.
+    ///   - timeout: Seconds after which a still-running process is terminated, so a wedged
+    ///     tool cannot hold the caller; nil waits for as long as it takes.
+    /// - Returns: The result; `status == -1` when the tool could not be launched, and
+    ///   `timedOut` set when it was terminated for running past `timeout`.
     public static func run(_ executable: String,
                            _ args: [String],
                            directory: URL? = nil,
                            input: Data? = nil,
                            environment: [String: String] = [:],
-                           augmentPATH: Bool = true) -> Result {
+                           augmentPATH: Bool = true,
+                           timeout: TimeInterval? = nil) -> Result {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = args
@@ -93,6 +100,13 @@ public enum ProcessRunner {
             }
         }
 
+        let expiry = TimeoutFlag()
+        if let timeout {
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) {
+                if process.isRunning { expiry.set(); process.terminate() }
+            }
+        }
+
         // Drain BOTH streams concurrently, then wait. This ordering is the whole point of
         // the type — see the note above.
         //
@@ -115,7 +129,16 @@ public enum ProcessRunner {
         }
         group.wait()
         process.waitUntilExit()
-        return Result(status: process.terminationStatus, stdout: sink.out, stderr: sink.err)
+        return Result(status: process.terminationStatus, stdout: sink.out, stderr: sink.err,
+                      timedOut: expiry.value)
+    }
+
+    /// Records, across threads, that the timeout fired.
+    private final class TimeoutFlag: @unchecked Sendable {
+        private let lock = NSLock()
+        private var fired = false
+        func set() { lock.lock(); fired = true; lock.unlock() }
+        var value: Bool { lock.lock(); defer { lock.unlock() }; return fired }
     }
 
     /// Collects the two drained streams from the queues that read them.

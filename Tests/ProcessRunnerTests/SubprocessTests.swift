@@ -72,4 +72,18 @@ final class ProcessRunnerTests: XCTestCase {
         XCTAssertNotNil(ProcessRunner.which("sh"))
         XCTAssertNil(ProcessRunner.which("definitely-not-a-real-tool-xyz"))
     }
+
+    func testATimeoutTerminatesAWedgedToolAndSaysSo() {
+        let start = Date()
+        let r = ProcessRunner.run("/bin/sleep", ["5"], timeout: 0.3)
+        XCTAssertTrue(r.timedOut)
+        XCTAssertFalse(r.succeeded)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2, "the caller was released at the timeout, not after 5 s")
+    }
+
+    func testAToolThatFinishesInTimeIsNotMarkedTimedOut() {
+        let r = ProcessRunner.run("/bin/echo", ["hi"], timeout: 5)
+        XCTAssertFalse(r.timedOut)
+        XCTAssertEqual(r.trimmedOutput, "hi")
+    }
 }
