@@ -96,6 +96,27 @@ final class FoundationExtensionsTests: XCTestCase {
         XCTAssertEqual(d.string(forKey: "s", default: "z"), "z")
     }
 
+    func testUTF8StringDecodesValidBytesOnly() {
+        XCTAssertEqual(Data("héllo".utf8).utf8String, "héllo")
+        XCTAssertNil(Data([0xFF, 0xFE, 0xFD]).utf8String)
+    }
+
+    func testGroupedSeparatesThousandsInTheCurrentLocale() {
+        let separator = Locale.current.groupingSeparator ?? ","
+        XCTAssertEqual(174_950.grouped, "174\(separator)950")
+        XCTAssertEqual(999.grouped, "999")
+        XCTAssertEqual((-1_000).grouped, "-1\(separator)000")
+    }
+
+    func testByteSizeLabelsUseBinaryUnitsUpToGB() {
+        XCTAssertEqual(0.byteSizeLabel, "0 B")
+        XCTAssertEqual(1023.byteSizeLabel, "1023 B")
+        XCTAssertEqual(2048.byteSizeLabel, "2.0 KB")
+        XCTAssertEqual(1_500_000.byteSizeLabel, "1.4 MB")
+        XCTAssertEqual((5 * 1024 * 1024 * 1024).byteSizeLabel, "5.0 GB")
+        XCTAssertEqual((3000 * 1024 * 1024 * 1024).byteSizeLabel, "3000.0 GB", "GB is the largest unit")
+    }
+
     @MainActor func testDebouncerRunsOnlyTheLastActionOfABurst() {
         let d = Debouncer(delay: 0.05)
         var ran: [Int] = []
