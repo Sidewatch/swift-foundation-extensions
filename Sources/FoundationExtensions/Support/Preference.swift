@@ -75,6 +75,9 @@ public struct Preference<Value> {
         value = (store.object(forKey: key) as? Value.RawValue).flatMap(Value.init(rawValue:)) ?? defaultValue
     }
 
+    /// Whether the person (or the app) has written this setting, as opposed to reading its default.
+    public var isWritten: Bool { store.object(forKey: key) != nil }
+
     /// Forgets the stored value, so the setting reads as its default again.
     public mutating func reset() {
         value = defaultValue

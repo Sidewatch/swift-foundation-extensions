@@ -67,8 +67,11 @@ final class PreferenceTests: XCTestCase {
 
     func testResetForgetsTheStoredValue() {
         var name = Preference("name", default: "a", store: store)
+        XCTAssertFalse(name.isWritten)
         name.wrappedValue = "b"
+        XCTAssertTrue(name.isWritten)
         name.reset()
+        XCTAssertFalse(name.isWritten)
         XCTAssertEqual(name.wrappedValue, "a")
         XCTAssertNil(store.object(forKey: "name"))
     }
