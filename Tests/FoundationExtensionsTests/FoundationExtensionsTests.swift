@@ -151,4 +151,10 @@ final class FoundationExtensionsTests: XCTestCase {
         XCTAssertEqual("/Sources/App.swift".pathTail(), "/Sources/App.swift")   // short enough: unchanged
         XCTAssertEqual("App.swift".pathTail(), "App.swift")
     }
+
+    func testNonEmptyIsNilOnlyForTheEmptyString() {
+        XCTAssertNil("".nonEmpty)
+        XCTAssertEqual(" ".nonEmpty, " ", "whitespace is not empty; trim first when it should be")
+        XCTAssertEqual("a".nonEmpty, "a")
+    }
 }
