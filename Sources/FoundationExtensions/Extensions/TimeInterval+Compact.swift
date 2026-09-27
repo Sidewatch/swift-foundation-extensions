@@ -15,12 +15,18 @@ public extension TimeInterval {
     /// `<1m`.
     var compactDuration: String {
         let total = Int(self.rounded())
-        guard total >= 60 else { return "<1m" }
-        let days = total / 86_400, hours = total % 86_400 / 3_600, minutes = total % 3_600 / 60
-        var parts: [String] = []
-        if days > 0 { parts.append("\(days)d") }
-        if days > 0 || hours > 0 { parts.append("\(hours)h") }
-        parts.append("\(minutes)m")
-        return parts.joined(separator: " ")
+        guard total >= 60 else {
+            let oneMinute = Duration.seconds(60).formatted(.units(allowed: [.minutes], width: .narrow))
+            return String(localized: "<\(oneMinute)", bundle: .module,
+                          comment: "A duration under one minute; the value is one minute in the locale's short form, e.g. 1m")
+        }
+        let days = total / 86_400, hours = total % 86_400 / 3_600
+        // Whole minutes only, so the formatter never rounds seconds up into the next minute.
+        let whole = Duration.seconds(total - total % 60)
+        // The locale's narrow units ("5d 8h 13m" in English); a day keeps its hour column and
+        // an hour its minute column even at zero.
+        let allowed: Set<Duration.UnitsFormatStyle.Unit> =
+            days > 0 ? [.days, .hours, .minutes] : hours > 0 ? [.hours, .minutes] : [.minutes]
+        return whole.formatted(.units(allowed: allowed, width: .narrow, zeroValueUnits: .show(length: 1)))
     }
 }
