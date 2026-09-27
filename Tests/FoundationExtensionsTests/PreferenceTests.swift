@@ -55,6 +55,16 @@ final class PreferenceTests: XCTestCase {
                        "a raw value that names no case reads as the default")
     }
 
+    func testAnOptionalSettingStoresAValueAndForgetsNil() {
+        var family = Preference<String?>("family", default: nil, store: store)
+        XCTAssertNil(family.wrappedValue)
+        family.wrappedValue = "Menlo"
+        XCTAssertEqual(Preference<String?>("family", default: nil, store: store).wrappedValue, "Menlo")
+        family.wrappedValue = nil
+        XCTAssertNil(store.object(forKey: "family"), "nil removes the key")
+        XCTAssertNil(Preference<String?>("family", default: nil, store: store).wrappedValue)
+    }
+
     func testResetForgetsTheStoredValue() {
         var name = Preference("name", default: "a", store: store)
         name.wrappedValue = "b"

@@ -35,7 +35,15 @@ public struct Preference<Value> {
         get { value }
         set {
             value = newValue
-            store.set(encode(newValue), forKey: key)
+            let encoded = encode(newValue)
+            // An optional setting assigned nil forgets the key rather than storing a nil box,
+            // which user defaults cannot hold.
+            if let optional = Mirror(reflecting: encoded).displayStyle, optional == .optional,
+               Mirror(reflecting: encoded).children.isEmpty {
+                store.removeObject(forKey: key)
+            } else {
+                store.set(encoded, forKey: key)
+            }
         }
     }
 
@@ -47,7 +55,7 @@ public struct Preference<Value> {
     }
 
     /// A setting of a property-list type (Bool, Int, Double, CGFloat, String, Data, Date, and
-    /// arrays or dictionaries of those).
+    /// arrays or dictionaries of those), or an optional one, where nil means "not set".
     public init(_ key: String, default defaultValue: Value, store: UserDefaults = .standard) {
         self.key = key
         self.defaultValue = defaultValue
