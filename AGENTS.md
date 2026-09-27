@@ -1,13 +1,21 @@
 # Swift Foundation Extensions
 
-Foundation and standard-library helpers shared across the Sidewatch family, so no package
-re-declares `trimmed`, `lines` or a debouncer of its own.
+The small Foundation helpers every package in the Sidewatch family would otherwise copy, and the one way the family runs an external tool.
 
-- Module `FoundationExtensions` in `Sources/FoundationExtensions`: `Extensions/` (one file per
-  extended type and purpose) and `Support/` (`Debouncer`, `AsyncBridge`).
-- Tests in `Tests/FoundationExtensionsTests`; `swift test` is the whole check.
-- No dependencies. macOS 14, tools 6.2, Swift 6 language mode.
-- A helper belongs here only if it needs nothing but Foundation and two or more packages (or the
-  app) would otherwise spell it out. AppKit helpers go to swift-appkit-views.
+- Modules `FoundationExtensions`, `ProcessRunner`, each in `Sources/<Module>` with tests in `Tests/<Module>Tests`; `swift test` is the whole check.
+- Swift 6 language mode, tools 6.2, macOS 14+.
+- Part of the Sidewatch package family; every package follows the same layout and PR rules.
+- Each module's user-facing documentation is `Docs/Modules/<Module>.md`; its last audit is `Docs/Audits/<Module>.md` — read it before auditing, and extend it rather than redo it.
 
-@CONTRIBUTING.md
+## FoundationExtensions — `Sources/FoundationExtensions`
+
+
+
+## ProcessRunner — `Sources/ProcessRunner`
+
+### Module map
+- `ProcessRunner.swift` — (flat package)
+
+## Rules
+
+Read `CONTRIBUTING.md` before changing anything: it is the layout and PR rulebook for this package.

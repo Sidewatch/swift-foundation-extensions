@@ -23,7 +23,7 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 ### Swift Package Manager
 
 ```swift
-.package(url: "https://github.com/Sidewatch/swift-process-runner.git", from: "0.1.0")
+.package(url: "https://github.com/Sidewatch/swift-foundation-extensions.git", from: "0.1.0")
 ```
 
 ## Usage
