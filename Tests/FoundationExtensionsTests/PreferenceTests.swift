@@ -35,8 +35,9 @@ final class PreferenceTests: XCTestCase {
         var width = Preference("width", default: CGFloat(100), store: store)
         width.wrappedValue = 140
         XCTAssertEqual(width.wrappedValue, 140)
-        XCTAssertEqual(Preference("width", default: CGFloat(100), store: store).wrappedValue, 140,
-                       "a new declaration — a relaunch — reads what was stored")
+        XCTAssertEqual(
+            Preference("width", default: CGFloat(100), store: store).wrappedValue, 140,
+            "a new declaration — a relaunch — reads what was stored")
     }
 
     func testAFalseWriteIsADecision() {
@@ -51,8 +52,9 @@ final class PreferenceTests: XCTestCase {
         XCTAssertEqual(store.integer(forKey: "mode"), 2)
         XCTAssertEqual(Preference("mode", default: Mode.some, store: store).wrappedValue, .all)
         store.set(99, forKey: "mode")
-        XCTAssertEqual(Preference("mode", default: Mode.some, store: store).wrappedValue, .some,
-                       "a raw value that names no case reads as the default")
+        XCTAssertEqual(
+            Preference("mode", default: Mode.some, store: store).wrappedValue, .some,
+            "a raw value that names no case reads as the default")
     }
 
     func testAnOptionalSettingStoresAValueAndForgetsNil() {

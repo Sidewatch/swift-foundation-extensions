@@ -67,13 +67,15 @@ public enum ProcessRunner {
     ///     tool cannot hold the caller; nil waits for as long as it takes.
     /// - Returns: The result; `status == -1` when the tool could not be launched, and
     ///   `timedOut` set when it was terminated for running past `timeout`.
-    public static func run(_ executable: String,
-                           _ args: [String],
-                           directory: URL? = nil,
-                           input: Data? = nil,
-                           environment: [String: String] = [:],
-                           augmentPATH: Bool = true,
-                           timeout: TimeInterval? = nil) -> Result {
+    public static func run(
+        _ executable: String,
+        _ args: [String],
+        directory: URL? = nil,
+        input: Data? = nil,
+        environment: [String: String] = [:],
+        augmentPATH: Bool = true,
+        timeout: TimeInterval? = nil
+    ) -> Result {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = args
@@ -127,8 +129,9 @@ public enum ProcessRunner {
         }
         group.wait()
         process.waitUntilExit()
-        return Result(status: process.terminationStatus, stdout: sink.out, stderr: sink.err,
-                      timedOut: expiry.value)
+        return Result(
+            status: process.terminationStatus, stdout: sink.out, stderr: sink.err,
+            timedOut: expiry.value)
     }
 
     /// Records, across threads, that the timeout fired.

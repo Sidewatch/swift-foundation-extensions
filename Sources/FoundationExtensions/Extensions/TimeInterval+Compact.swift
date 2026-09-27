@@ -17,8 +17,9 @@ public extension TimeInterval {
         let total = Int(self.rounded())
         guard total >= 60 else {
             let oneMinute = Duration.seconds(60).formatted(.units(allowed: [.minutes], width: .narrow))
-            return String(localized: "<\(oneMinute)", bundle: .module,
-                          comment: "A duration under one minute; the value is one minute in the locale's short form, e.g. 1m")
+            return String(
+                localized: "<\(oneMinute)", bundle: .module,
+                comment: "A duration under one minute; the value is one minute in the locale's short form, e.g. 1m")
         }
         let days = total / 86_400, hours = total % 86_400 / 3_600
         // Whole minutes only, so the formatter never rounds seconds up into the next minute.

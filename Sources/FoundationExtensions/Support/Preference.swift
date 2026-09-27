@@ -36,7 +36,8 @@ public struct Preference<Value> {
             // An optional setting assigned nil forgets the key rather than storing a nil box,
             // which user defaults cannot hold.
             if let optional = Mirror(reflecting: encoded).displayStyle, optional == .optional,
-               Mirror(reflecting: encoded).children.isEmpty {
+                Mirror(reflecting: encoded).children.isEmpty
+            {
                 store.removeObject(forKey: key)
             } else {
                 store.set(encoded, forKey: key)

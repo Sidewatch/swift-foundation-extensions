@@ -62,8 +62,9 @@ final class FoundationExtensionsTests: XCTestCase {
         XCTAssertEqual(TimeInterval(30).compactDuration, "<1m")
         XCTAssertEqual(TimeInterval(12 * 60).compactDuration, "12m")
         XCTAssertEqual(TimeInterval(90 * 60).compactDuration, "1h 30m")
-        XCTAssertEqual(TimeInterval(5 * 86_400 + 13 * 60).compactDuration, "5d 0h 13m",
-                       "a day keeps its hour column even at zero")
+        XCTAssertEqual(
+            TimeInterval(5 * 86_400 + 13 * 60).compactDuration, "5d 0h 13m",
+            "a day keeps its hour column even at zero")
         XCTAssertEqual(TimeInterval(5 * 86_400 + 8 * 3_600 + 13 * 60).compactDuration, "5d 8h 13m")
     }
 
@@ -121,7 +122,11 @@ final class FoundationExtensionsTests: XCTestCase {
         let d = Debouncer(delay: 0.05)
         var ran: [Int] = []
         let done = expectation(description: "settled")
-        for i in 1...5 { d.schedule { ran.append(i); if i == 5 { done.fulfill() } } }
+        for i in 1...5 {
+            d.schedule {
+                ran.append(i); if i == 5 { done.fulfill() }
+            }
+        }
         wait(for: [done], timeout: 2)
         XCTAssertEqual(ran, [5])
     }
@@ -139,7 +144,9 @@ final class FoundationExtensionsTests: XCTestCase {
 
     func testAsyncBridgeReturnsTheValueAndNilForAThrow() {
         struct Boom: Error {}
-        let answer: Int? = AsyncBridge.wait { try await Task.sleep(nanoseconds: 1_000_000); return 42 }
+        let answer: Int? = AsyncBridge.wait {
+            try await Task.sleep(nanoseconds: 1_000_000); return 42
+        }
         XCTAssertEqual(answer, 42)
         let failed: Int? = AsyncBridge.wait { () async throws -> Int in throw Boom() }
         XCTAssertNil(failed)
@@ -148,7 +155,7 @@ final class FoundationExtensionsTests: XCTestCase {
     func testPathTailKeepsTheLastComponents() {
         XCTAssertEqual("/Users/me/Sources/App.swift".pathTail(), "Sources/App.swift")
         XCTAssertEqual("/Users/me/Sources/App.swift".pathTail(3), "me/Sources/App.swift")
-        XCTAssertEqual("/Sources/App.swift".pathTail(), "/Sources/App.swift")   // short enough: unchanged
+        XCTAssertEqual("/Sources/App.swift".pathTail(), "/Sources/App.swift")  // short enough: unchanged
         XCTAssertEqual("App.swift".pathTail(), "App.swift")
     }
 
