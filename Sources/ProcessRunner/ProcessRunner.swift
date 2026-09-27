@@ -5,6 +5,7 @@
 //  Run a command-line tool and collect its output, without the deadlock.
 //
 //  Created by David Sherlock on 8/5/26.
+//  Copyright © 2026 ArrayPress Limited. MIT licence.
 //
 
 import Foundation

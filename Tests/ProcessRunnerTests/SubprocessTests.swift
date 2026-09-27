@@ -6,6 +6,7 @@
 //  convenience, and failure reporting.
 //
 //  Created by David Sherlock on 8/5/26.
+//  Copyright © 2026 ArrayPress Limited. MIT licence.
 //
 
 import XCTest
