@@ -144,4 +144,11 @@ final class FoundationExtensionsTests: XCTestCase {
         let failed: Int? = AsyncBridge.wait { () async throws -> Int in throw Boom() }
         XCTAssertNil(failed)
     }
+
+    func testPathTailKeepsTheLastComponents() {
+        XCTAssertEqual("/Users/me/Sources/App.swift".pathTail(), "Sources/App.swift")
+        XCTAssertEqual("/Users/me/Sources/App.swift".pathTail(3), "me/Sources/App.swift")
+        XCTAssertEqual("/Sources/App.swift".pathTail(), "/Sources/App.swift")   // short enough: unchanged
+        XCTAssertEqual("App.swift".pathTail(), "App.swift")
+    }
 }
