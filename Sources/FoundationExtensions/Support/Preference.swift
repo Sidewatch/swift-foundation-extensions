@@ -14,12 +14,9 @@ import Foundation
 ///
 ///     @Preference("WordWrap", default: false) static var wordWrap: Bool
 ///
-/// The value is read once, when the wrapper is created, and kept in memory: reading it costs
-/// nothing, so a setting consulted while drawing stays cheap. Every assignment writes through to
-/// the store. `$wordWrap.key` and `$wordWrap.defaultValue` reach the declaration itself.
-///
-/// An unwritten key is the absence of a decision, so it reads as `defaultValue` — never as the
-/// type's zero, which is what `bool(forKey:)` would give and how a default-on toggle turns off.
+/// The value is read once and kept in memory, so a setting consulted while drawing stays cheap;
+/// every assignment writes through. An unwritten key reads as `defaultValue`, never as the
+/// type's zero (which is how a default-on toggle turns off).
 @propertyWrapper
 public struct Preference<Value> {
     /// The user-defaults key.
