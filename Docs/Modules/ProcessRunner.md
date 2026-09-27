@@ -1,6 +1,6 @@
 # Swift ProcessRunner
 
-A one-file, dependency-free runner for external tools: launch, drain both pipes concurrently, return status + stdout + stderr.
+A one-file runner for external tools: launch, drain both pipes concurrently, return status + stdout + stderr.
 
 It exists because "launch a tool, read its output" was hand-rolled in four places and only some
 got it right: a `Pipe` you never drain deadlocks the moment the child writes more than ~64 KB.
@@ -11,7 +11,7 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 - `ProcessRunner.run(executable, arguments:, currentDirectory:, environment:)` → `Result` with `status`, `stdout`, `stderr`
 - `Result.outputText`, `errorText`, `trimmedOutput`, `succeeded`, `launched`
 - `ProcessRunner.which(tool)` → the path `PATH` resolves the tool to, or nil
-- No dependencies; Swift 6 language mode
+- Depends only on FoundationExtensions, in the same package; Swift 6 language mode
 
 ## Requirements
 
