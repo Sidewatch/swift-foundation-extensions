@@ -42,8 +42,8 @@ final class ProcessRunnerTests: XCTestCase {
         XCTAssertEqual(r.status, -1)
     }
 
-    /// The reason this type exists: >64 KB on BOTH streams must not deadlock. The old
-    /// hand-rolled version that attached undrained pipes to both hangs here forever.
+    /// The reason this type exists: >64 KB on BOTH streams must not deadlock. A runner that
+    /// attaches undrained pipes to both hangs here forever.
     func testLargeOutputOnBothStreamsDoesNotDeadlock() {
         let script = "yes abcdefghij | head -20000; yes klmnopqrst | head -20000 >&2"
         let r = ProcessRunner.run("/bin/sh", ["-c", script])

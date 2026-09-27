@@ -13,21 +13,19 @@ import FoundationExtensions
 
 /// Runs external tools and returns what they printed.
 ///
-/// This exists because "launch a tool, read its output" was hand-rolled in four places, and
-/// only some of them got it right. The trap is specific and silent: attaching a `Pipe` you
-/// never drain deadlocks the moment the child writes more than the pipe buffer (~64 KB) —
-/// the child blocks in `write(2)` while the parent blocks in `waitUntilExit()`, and neither
-/// side ever progresses. One copy discarded stderr (safe), one drained concurrently (safe),
-/// and one attached undrained pipes to BOTH streams and waited (a hang waiting for a verbose
-/// enough command). Draining both streams concurrently, always, is the only shape that
-/// cannot deadlock — so it is the only shape this type offers.
+/// A `Pipe` that is never drained deadlocks once the child writes more than the pipe buffer
+/// (~64 KB): the child blocks in `write(2)` while the parent blocks in `waitUntilExit()`.
+/// Draining both streams concurrently, always, is the only shape that cannot deadlock, so it is
+/// the only shape this type offers.
 public enum ProcessRunner {
 
     /// What a finished process produced.
     public struct Result: Equatable, Sendable {
         /// Exit status, or -1 when the tool could not be launched at all.
         public let status: Int32
+        /// Everything the process wrote to standard output.
         public let stdout: Data
+        /// Everything the process wrote to standard error.
         public let stderr: Data
         /// True when the process outlived its `timeout` and was terminated.
         public var timedOut = false
@@ -38,9 +36,13 @@ public enum ProcessRunner {
             stdout.utf8String?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         }
+        /// `stdout` as UTF-8, untrimmed; empty when it is not valid UTF-8.
         public var outputText: String { stdout.utf8String ?? "" }
+        /// `stderr` as UTF-8, untrimmed; empty when it is not valid UTF-8.
         public var errorText: String { stderr.utf8String ?? "" }
+        /// False when the tool could not be started at all (`status == -1`).
         public var launched: Bool { status != -1 }
+        /// True when the process exited with status 0.
         public var succeeded: Bool { status == 0 }
     }
 
@@ -94,7 +96,7 @@ public enum ProcessRunner {
 
         if let inPipe, let input {
             // Write on a background hop: a child that never reads stdin would otherwise
-            // block us here before we start draining its output.
+            // block this thread before draining of its output starts.
             DispatchQueue.global(qos: .utility).async {
                 inPipe.fileHandleForWriting.write(input)
                 try? inPipe.fileHandleForWriting.close()
@@ -108,14 +110,9 @@ public enum ProcessRunner {
             }
         }
 
-        // Drain BOTH streams concurrently, then wait. This ordering is the whole point of
-        // the type — see the note above.
-        //
-        // The two reads land in a shared box rather than in captured `var`s. Capturing vars
-        // and mutating them from the two queues is what this originally did, and it works,
-        // but only by an argument the compiler cannot check — so under strict concurrency it
-        // warned, and a warning that must be read as "fine, actually" every time is worse
-        // than no warning at all.
+        // Drain BOTH streams concurrently, then wait: this ordering is the whole point of the
+        // type. The reads land in a locked box rather than captured `var`s, so strict
+        // concurrency can check it.
         let sink = StreamSink()
         let group = DispatchGroup()
         group.enter()
@@ -144,11 +141,8 @@ public enum ProcessRunner {
 
     /// Collects the two drained streams from the queues that read them.
     ///
-    /// Locked rather than merely `@unchecked Sendable`: the `DispatchGroup` join does order
-    /// the writes before the read, so an unsynchronised box would be correct today, but that
-    /// correctness lives in a comment two call sites away. The lock is uncontended (three
-    /// acquisitions per process launch, against work measured in milliseconds of I/O), so it
-    /// costs nothing worth counting and stays correct if the drain logic is ever reshaped.
+    /// Locked even though the `DispatchGroup` join already orders the writes before the read, so
+    /// it stays correct if the drain logic is reshaped; the lock is uncontended and costs nothing.
     private final class StreamSink: @unchecked Sendable {
         private let lock = NSLock()
         private var outStorage = Data()
