@@ -39,8 +39,12 @@ public struct Preference<Value> {
         }
     }
 
-    /// The declaration itself, for its key and default.
-    public var projectedValue: Preference<Value> { self }
+    /// The declaration itself, for its key and default — and settable, so `$setting.reset()`
+    /// works on a static setting.
+    public var projectedValue: Preference<Value> {
+        get { self }
+        set { self = newValue }
+    }
 
     /// A setting of a property-list type (Bool, Int, Double, CGFloat, String, Data, Date, and
     /// arrays or dictionaries of those).

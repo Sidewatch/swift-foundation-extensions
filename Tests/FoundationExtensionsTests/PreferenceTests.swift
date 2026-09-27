@@ -68,4 +68,19 @@ final class PreferenceTests: XCTestCase {
         XCTAssertEqual(p.projectedValue.key, "k")
         XCTAssertEqual(p.projectedValue.defaultValue, 3)
     }
+
+    @MainActor func testResetThroughTheProjectionOfAStaticSetting() {
+        defer { Holder.store.removePersistentDomain(forName: "preference-static-holder") }
+        Holder.flag = false
+        XCTAssertEqual(Holder.store.object(forKey: "holder.flag") as? Bool, false)
+        Holder.$flag.reset()
+        XCTAssertTrue(Holder.flag, "back to the default")
+        XCTAssertNil(Holder.store.object(forKey: "holder.flag"), "and never written")
+    }
+}
+
+/// A static setting, the way apps declare them, in a suite of its own.
+@MainActor private enum Holder {
+    static let store = UserDefaults(suiteName: "preference-static-holder")!
+    @Preference("holder.flag", default: true, store: store) static var flag: Bool
 }
