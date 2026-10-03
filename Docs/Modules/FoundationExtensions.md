@@ -7,6 +7,7 @@ otherwise re-declare: one home, tested once.
 |---|---|
 | `collection[safe: i]` | the element, or nil out of bounds |
 | `x.clamped(to:)` / `clamped(low:high:)` | a value held in bounds (the second tolerates inverted bounds) |
+| `seq.groupedInOrder(by:)` | groups in the order each key first appears, elements in their order |
 | `text.lines` | lines split on `\n` — safe on CRLF text, unlike `split(separator: "\n")` |
 | `text.shellQuoted` | one POSIX shell argument |
 | `text.trimmed` / `trimmedSpaces` | surrounding whitespace (and newlines) removed |

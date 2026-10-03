@@ -22,6 +22,14 @@ final class FoundationExtensionsTests: XCTestCase {
         XCTAssertNil([Int]()[safe: 0])
     }
 
+    func testGroupedInOrderKeepsFirstAppearanceAndElementOrder() {
+        let words = ["bee", "ant", "bat", "cow", "asp", "bug"]
+        let groups = words.groupedInOrder { $0.first! }
+        XCTAssertEqual(groups.map(\.key), ["b", "a", "c"], "groups in the order their key first appears")
+        XCTAssertEqual(groups.map(\.elements), [["bee", "bat", "bug"], ["ant", "asp"], ["cow"]], "elements keep their order")
+        XCTAssertTrue([Int]().groupedInOrder { $0 }.isEmpty)
+    }
+
     func testClampedHoldsBothBoundsAndToleratesInvertedOnes() {
         XCTAssertEqual(5.clamped(to: 0...3), 3)
         XCTAssertEqual((-2).clamped(to: 0...3), 0)
