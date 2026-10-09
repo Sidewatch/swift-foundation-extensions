@@ -42,7 +42,9 @@ See [Docs/Modules/FoundationExtensions.md](Docs/Modules/FoundationExtensions.md)
 ```swift
 import ProcessRunner
 
-let r = ProcessRunner.run("/usr/bin/git", arguments: ["status", "--porcelain"], currentDirectory: repo)
+let r = ProcessRunner.run(
+    "/usr/bin/git", ["status", "--porcelain"], directory: repo,
+    environment: ["GIT_OPTIONAL_LOCKS": "0"], removing: ["GIT_DIR"], timeout: 60)
 if r.succeeded { print(r.outputText) } else { print(r.errorText) }
 ```
 

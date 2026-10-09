@@ -26,11 +26,32 @@ Nothing to fix. Checked: stdout and stderr are drained on their own queues and j
 `DispatchGroup` before `waitUntilExit`, so a child that fills one pipe cannot deadlock the parent;
 the locked result sink; the optional stdin pipe; the launch-failure path.
 
+## Timeout and environment — 9 Oct 2026
+
+Probed, with the outcomes, so nobody re-tests them:
+
+- `Process` launches the child as the leader of its own process group and `terminate()` signals
+  that group, so `sh -c 'sleep 30 & sleep 30'` with a 1 s timeout already returned in ~1 s under
+  the old read-to-EOF drain: both sleeps died with the shell. The case that blocked was a
+  grandchild that ignores `SIGTERM` (`trap "" TERM`, inherited through `exec`) or has left the
+  group: the old drain waited the full 10 s for EOF and reported `succeeded == true`. Now:
+  `SIGTERM` at the deadline, `SIGKILL` to the group after `killGrace` (0.5 s), then the drains
+  stop polling and the pipes are abandoned. Measured: 1.67 s for the `trap` fixture. Test
+  `testATimeoutReturnsEvenWhenAGrandchildKeepsThePipesOpen`; mutant: the previous
+  `ProcessRunner.swift` (10.08 s, `succeeded` true).
+- `removing:` strips inherited variables before `environment:` is layered; a name in both takes
+  the `environment:` value. Tests `testRemovingStripsAnInheritedVariable` (mutant: the
+  `removeValue` loop deleted — the child still saw the variable) and
+  `testEnvironmentWinsOverRemoving`.
+- Output written before the deadline is kept (`testOutputBeforeTheTimeoutIsKept`).
+
 ## Known non-issues (do not "fix" these again)
 
-- None recorded.
+- The drains poll in 200 ms ticks only while a timeout is set and no data is ready; a stream at
+  EOF returns at once, so the normal path costs nothing extra.
 
 ## History
 
 - 17 Sep 2026 — full audit (app + all 20 libraries), Claude with David.
 - 18 Sep 2026 — logic review (every source and test file, line by line), Claude with David.
+- 9 Oct 2026 — timeout against a pipe-holding grandchild, `removing:` for inherited variables (see above).

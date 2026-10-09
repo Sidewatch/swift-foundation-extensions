@@ -8,8 +8,10 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 
 ## Features
 
-- `ProcessRunner.run(executable, arguments:, currentDirectory:, environment:)` → `Result` with `status`, `stdout`, `stderr`
+- `ProcessRunner.run(executable, args, directory:, input:, environment:, removing:, augmentPATH:, timeout:)` → `Result` with `status`, `stdout`, `stderr`, `timedOut`
 - `Result.outputText`, `errorText`, `trimmedOutput`, `succeeded`, `launched`
+- `removing:` strips inherited variables (a `GIT_DIR` the launching shell exported) before `environment:` is layered on
+- `timeout:` sends `SIGTERM` at the deadline and `SIGKILL` to the child's process group after `killGrace` (0.5 s), then abandons the pipes — so the caller is released even when a grandchild that ignores `SIGTERM` keeps stdout open
 - `ProcessRunner.which(tool)` → the path `PATH` resolves the tool to, or nil
 - Depends only on FoundationExtensions, in the same package; Swift 6 language mode
 
@@ -31,8 +33,10 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 ```swift
 import ProcessRunner
 
-let r = ProcessRunner.run("/usr/bin/git", arguments: ["status", "--porcelain"], currentDirectory: repo)
-if r.succeeded { print(r.outputText) } else { print(r.errorText) }
+let r = ProcessRunner.run(
+    "/usr/bin/git", ["status", "--porcelain"], directory: repo,
+    environment: ["GIT_OPTIONAL_LOCKS": "0"], removing: ["GIT_DIR"], timeout: 60)
+if r.timedOut { print("git hung") } else if r.succeeded { print(r.outputText) } else { print(r.errorText) }
 ```
 
 ## For agents
