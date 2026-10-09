@@ -86,6 +86,25 @@ final class FoundationExtensionsTests: XCTestCase {
         XCTAssertEqual(("a/b.MD" as NSString).lowercasedExtension, "md")
     }
 
+    func testRealPathResolvesLinksTheWayFSEventsNamesThem() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rp-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let target = dir.appendingPathComponent("target.txt")
+        try Data("x".utf8).write(to: target)
+        let link = dir.appendingPathComponent("link.txt")
+        try FileManager.default.createSymbolicLink(atPath: link.path, withDestinationPath: "target.txt")
+        XCTAssertEqual(link.realPath, target.realPath, "a relative link resolves to its target's real path")
+        XCTAssertEqual(URL(fileURLWithPath: "/tmp").realPath, "/private/tmp", "the /private form FSEvents reports")
+        XCTAssertEqual(
+            URL(fileURLWithPath: "/var").resolvingSymlinksInPath().path, "/var",
+            "Foundation strips /private again, which is why realPath exists")
+        XCTAssertNil(dir.appendingPathComponent("missing").realPath)
+        let dangling = dir.appendingPathComponent("dangling.txt")
+        try FileManager.default.createSymbolicLink(atPath: dangling.path, withDestinationPath: "gone.txt")
+        XCTAssertNil(dangling.realPath, "a dangling link has no real path")
+    }
+
     func testFullRangeCountsUTF16Units() {
         XCTAssertEqual(("é🙂" as NSString).fullRange, NSRange(location: 0, length: 3))
         XCTAssertEqual(NSAttributedString(string: "abc").fullRange, NSRange(location: 0, length: 3))

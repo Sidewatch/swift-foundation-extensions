@@ -13,6 +13,7 @@ otherwise re-declare: one home, tested once.
 | `text.trimmed` / `trimmedSpaces` | surrounding whitespace (and newlines) removed |
 | `interval.compactDuration` | `5d 8h 13m`, `12m`, `<1m` |
 | `url.exists`, `url.lowercasedExtension` | file existence, a case-folded extension |
+| `url.realPath` | the path with every link resolved as `realpath(3)` names it (`/private/var/…`, what FSEvents reports); nil when nothing exists there — `resolvingSymlinksInPath` strips `/private` and is not a substitute |
 | `nsString.fullRange` | `NSRange` over the whole string |
 | `defaults.bool(forKey:default:)` (and Int, Double, String) | a stored value, or the default when never written |
 | `Debouncer` | the last of a burst of actions, once, after a quiet delay |
