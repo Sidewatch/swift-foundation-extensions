@@ -192,3 +192,42 @@ final class FoundationExtensionsTests: XCTestCase {
         XCTAssertEqual("a".nonEmpty, "a")
     }
 }
+
+final class BoundedLineRangeTests: XCTestCase {
+    func testOrdinaryLinesComeBackWhole() {
+        let s = "one\ntwo three\nfour\n" as NSString
+        XCTAssertEqual(s.lineRange(for: NSRange(location: 6, length: 2), reach: 100), s.lineRange(for: NSRange(location: 6, length: 2)))
+    }
+
+    func testAHugeLineIsCutAtTheReach() {
+        let s = ("a\n" + String(repeating: "x", count: 1_000_000) + "\nb") as NSString
+        let r = s.lineRange(for: NSRange(location: 500_000, length: 10), reach: 4_000)
+        XCTAssertEqual(r, NSRange(location: 496_000, length: 8_010))
+    }
+
+    func testTheCutNeverPassesTheLineItsRangeIsOn() {
+        let s = ("short\n" + String(repeating: "y", count: 50_000)) as NSString
+        let r = s.lineRange(for: NSRange(location: 8, length: 0), reach: 4_000)
+        XCTAssertEqual(r.location, 6, "the line starts 2 characters back, inside the reach")
+        XCTAssertEqual(NSMaxRange(r), 8 + 4_000)
+    }
+
+    func testOutOfRangeAndEmptyAreSafe() {
+        XCTAssertEqual(("" as NSString).lineRange(for: NSRange(location: 3, length: 9), reach: 10), NSRange(location: 0, length: 0))
+        let s = "abc" as NSString
+        XCTAssertEqual(s.lineRange(for: NSRange(location: 10, length: 5), reach: 10), NSRange(location: 0, length: 3))
+    }
+}
+
+final class BoundedLineRangeAgreementTests: XCTestCase {
+    /// Within the reach the answer is exactly `lineRange(for:)`'s, for every break NSString knows.
+    func testItAgreesWithLineRangeForEveryBreakAndPosition() {
+        let s = "a\r\nbb\rccc\ndd\u{2028}e\u{2029}ff\u{85}g\r\n\nlast" as NSString
+        for location in 0...s.length {
+            for len in 0...min(4, s.length - location) {
+                let r = NSRange(location: location, length: len)
+                XCTAssertEqual(s.lineRange(for: r, reach: 1_000), s.lineRange(for: r), "range \(r)")
+            }
+        }
+    }
+}
