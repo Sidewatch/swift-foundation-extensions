@@ -14,6 +14,9 @@ otherwise re-declare: one home, tested once.
 | `interval.compactDuration` | `5d 8h 13m`, `12m`, `<1m` |
 | `url.exists`, `url.lowercasedExtension` | file existence, a case-folded extension |
 | `url.realPath` | the path with every link resolved as `realpath(3)` names it (`/private/var/…`, what FSEvents reports); nil when nothing exists there — `resolvingSymlinksInPath` strips `/private` and is not a substitute |
+| `path.isInside(folder, includingSelf:)`, `path.relativePath(under:)`, `url.isInside`, `url.path(relativeTo:)`, `roots.firstContaining(url)`, `roots.relativePath(of:)` | "is this path in that folder" by whole components (`/a/bc` is not inside `/a/b`), the folder itself only when asked; `directoryPrefix` is the folder with one trailing `/` |
+| `url.contentStamp` | a file's size and nanosecond modification time from one `stat` (links followed), nil when nothing is there — the "did it change" key |
+| `StampedCache` | a bounded memo keyed by path whose entries are dropped when the file's `contentStamp` moves |
 | `nsString.fullRange` | `NSRange` over the whole string |
 | `defaults.bool(forKey:default:)` (and Int, Double, String) | a stored value, or the default when never written |
 | `Debouncer` | the last of a burst of actions, once, after a quiet delay |

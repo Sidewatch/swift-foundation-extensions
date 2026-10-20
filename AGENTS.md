@@ -9,6 +9,8 @@ The small Foundation helpers every package in the Sidewatch family would otherwi
 
 ## FoundationExtensions — `Sources/FoundationExtensions`
 
+### Module map
+- Every helper, one line each, is the table in `Docs/Modules/FoundationExtensions.md`. Recent: `Extensions/String+PathContainment` (path-in-folder by whole components), `Extensions/URL+ContentStamp` (one `stat`, links followed, nanosecond mtime), `Support/StampedCache` (a bounded memo invalidated by the stamp)
 
 
 ## ProcessRunner — `Sources/ProcessRunner`
