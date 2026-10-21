@@ -22,4 +22,13 @@ public extension URL {
         defer { free(resolved) }
         return String(cString: resolved)
     }
+
+    /// Whether this URL and `other` name the same file however each is spelled: the same standardized
+    /// path, or the same real path (`/tmp` and `/private/tmp`, a folder opened through a symlink). Two
+    /// paths to nothing compare by their standardized spelling alone.
+    func isSameFile(as other: URL) -> Bool {
+        if standardizedFileURL.path == other.standardizedFileURL.path { return true }
+        guard let mine = realPath, let theirs = other.realPath else { return false }
+        return mine == theirs
+    }
 }
