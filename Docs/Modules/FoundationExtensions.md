@@ -9,6 +9,7 @@ otherwise re-declare: one home, tested once.
 | `x.clamped(to:)` / `clamped(low:high:)` | a value held in bounds (the second tolerates inverted bounds) |
 | `seq.groupedInOrder(by:)` | groups in the order each key first appears, elements in their order |
 | `text.lines` | lines split on `\n` — safe on CRLF text, unlike `split(separator: "\n")` |
+| `text.firstLine`, `text.clipped(to:)` | the first line holding anything, trimmed (every break kind); at most n characters, the ellipsis included |
 | `text.shellQuoted` | one POSIX shell argument |
 | `text.trimmed` / `trimmedSpaces` | surrounding whitespace (and newlines) removed |
 | `interval.compactDuration` | `5d 8h 13m`, `12m`, `<1m` |
