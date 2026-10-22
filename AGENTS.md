@@ -10,7 +10,7 @@ The small Foundation helpers every package in the Sidewatch family would otherwi
 ## FoundationExtensions — `Sources/FoundationExtensions`
 
 ### Module map
-- Every helper, one line each, is the table in `Docs/Modules/FoundationExtensions.md`. Recent: `Support/SingleFlight` (one run at a time, one rerun for the latest request), `Extensions/FileManager+Walk` (a walk under a root that is itself a link, spelled as given), `URL.isSameFile(as:)`, `Extensions/String+PathContainment` (path-in-folder by whole components), `Extensions/URL+ContentStamp` (one `stat`, links followed, nanosecond mtime), `Support/StampedCache` (a bounded memo invalidated by the stamp)
+- Every helper, one line each, is the table in `Docs/Modules/FoundationExtensions.md`. Recent: `Support/RecencyFormatter` (a list's "3 hr ago" / "Yesterday at 14:05" / "22 Oct", Foundation's own words, so every locale is covered; tests pin en_GB, en_US's U+202F before PM, de_DE), `Support/SingleFlight` (one run at a time, one rerun for the latest request), `Extensions/FileManager+Walk` (a walk under a root that is itself a link, spelled as given), `URL.isSameFile(as:)`, `Extensions/String+PathContainment` (path-in-folder by whole components), `Extensions/URL+ContentStamp` (one `stat`, links followed, nanosecond mtime), `Support/StampedCache` (a bounded memo invalidated by the stamp)
 
 
 ## ProcessRunner — `Sources/ProcessRunner`

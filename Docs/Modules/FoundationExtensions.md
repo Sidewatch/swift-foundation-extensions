@@ -24,6 +24,7 @@ otherwise re-declare: one home, tested once.
 | `nsString.fullRange` | `NSRange` over the whole string |
 | `defaults.bool(forKey:default:)` (and Int, Double, String) | a stored value, or the default when never written |
 | `Debouncer` | the last of a burst of actions, once, after a quiet delay |
+| `RecencyFormatter` | a moment for a list of recent things, in the locale's words: "now", "12 min ago", "Yesterday at 14:05", "Mon 09:00", "22 Oct", "31 Dec 2025"; never "in 5 min" for a moment ahead of now; `full(_:)` with seconds and zone. Make one per list |
 | `AsyncBridge.wait` | an async result from synchronous code on a worker thread |
 
 ```swift
