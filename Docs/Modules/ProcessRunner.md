@@ -8,10 +8,11 @@ got it right: a `Pipe` you never drain deadlocks the moment the child writes mor
 
 ## Features
 
-- `ProcessRunner.run(executable, args, directory:, input:, environment:, removing:, augmentPATH:, timeout:)` → `Result` with `status`, `stdout`, `stderr`, `timedOut`
+- `ProcessRunner.run(executable, args, directory:, input:, environment:, removing:, augmentPATH:, timeout:, outputLimit:)` → `Result` with `status`, `stdout`, `stderr`, `timedOut`, `truncated`
 - `Result.outputText`, `errorText`, `trimmedOutput`, `succeeded`, `launched`
 - `removing:` strips inherited variables (a `GIT_DIR` the launching shell exported) before `environment:` is layered on
 - `timeout:` sends `SIGTERM` at the deadline and `SIGKILL` to the child's process group after `killGrace` (0.5 s), then abandons the pipes — so the caller is released even when a grandchild that ignores `SIGTERM` keeps stdout open
+- `outputLimit:` keeps the first that many bytes of stdout and ends the process the way a timeout does, so a tool printing without end (`yes`, a runaway `jq` query) cannot fill memory; `truncated` says it happened
 - `ProcessRunner.which(tool)` → the path `PATH` resolves the tool to, or nil
 - Depends only on FoundationExtensions, in the same package; Swift 6 language mode
 

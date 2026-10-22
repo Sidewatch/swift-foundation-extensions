@@ -29,6 +29,9 @@ public enum ProcessRunner {
         public let stderr: Data
         /// True when the process outlived its `timeout` and was terminated.
         public var timedOut = false
+        /// True when standard output passed `outputLimit`: `stdout` holds the first `outputLimit`
+        /// bytes and the process was terminated.
+        public var truncated = false
 
         /// `stdout` as UTF-8 with surrounding whitespace trimmed — the common case for
         /// tools whose output is one line (`which`, `git rev-parse`).
@@ -73,8 +76,10 @@ public enum ProcessRunner {
     ///   - timeout: Seconds after which a still-running process is terminated, so a wedged
     ///     tool cannot hold the caller; nil waits for as long as it takes. The caller is released
     ///     within `timeout` + ``killGrace`` even when a grandchild keeps the pipes open.
-    /// - Returns: The result; `status == -1` when the tool could not be launched, and
-    ///   `timedOut` set when it was terminated for running past `timeout`.
+    ///   - outputLimit: Bytes of standard output kept; past them the process is terminated as a
+    ///     timed-out one is, so a tool printing without end cannot fill memory. Nil keeps all.
+    /// - Returns: The result; `status == -1` when the tool could not be launched, `timedOut` set
+    ///   when it was terminated for running past `timeout`, `truncated` when for `outputLimit`.
     public static func run(
         _ executable: String,
         _ args: [String],
@@ -83,7 +88,8 @@ public enum ProcessRunner {
         environment: [String: String] = [:],
         removing: Set<String> = [],
         augmentPATH: Bool = true,
-        timeout: TimeInterval? = nil
+        timeout: TimeInterval? = nil,
+        outputLimit: Int? = nil
     ) -> Result {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
@@ -111,7 +117,11 @@ public enum ProcessRunner {
         let group = DispatchGroup()
         group.enter()
         DispatchQueue.global(qos: .utility).async {
-            sink.setOut(drain(outPipe.fileHandleForReading, until: watchdog.abandoned))
+            sink.setOut(
+                drain(outPipe.fileHandleForReading, until: watchdog.abandoned, limit: outputLimit) {
+                    watchdog.overflowed.set()
+                    watchdog.stop(process)
+                })
             group.leave()
         }
         group.enter()
@@ -123,7 +133,7 @@ public enum ProcessRunner {
         process.waitUntilExit()
         return Result(
             status: process.terminationStatus, stdout: sink.out, stderr: sink.err,
-            timedOut: watchdog.fired.value)
+            timedOut: watchdog.fired.value, truncated: watchdog.overflowed.value)
     }
 
     /// The inherited environment minus `removing`, plus `adding`, with `PATH` augmented on request.
@@ -149,11 +159,12 @@ public enum ProcessRunner {
     }
 
     /// Reads `handle` to EOF, or until `abandoned` is raised — the pipe may be held open by a
-    /// grandchild that outlives the timed-out child, and reading to EOF would wait for it.
+    /// grandchild that outlives the timed-out child, and reading to EOF would wait for it — or
+    /// until more than `limit` bytes came: then the first `limit` are kept and `onLimit` runs.
     ///
     /// Polls in short ticks so the abandon flag is noticed; a stream that reaches EOF (the
     /// normal case) returns at once.
-    private static func drain(_ handle: FileHandle, until abandoned: Flag) -> Data {
+    private static func drain(_ handle: FileHandle, until abandoned: Flag, limit: Int? = nil, onLimit: () -> Void = {}) -> Data {
         let fd = handle.fileDescriptor
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 64 * 1024)
@@ -166,6 +177,11 @@ public enum ProcessRunner {
             let count = buffer.withUnsafeMutableBytes { read(fd, $0.baseAddress, $0.count) }
             if count > 0 {
                 data.append(contentsOf: buffer[0..<count])
+                if let limit, data.count > limit {
+                    data = data.prefix(limit)
+                    onLimit()
+                    break
+                }
             } else if count == 0 || (errno != EINTR && errno != EAGAIN) {
                 break  // EOF, or a read error that will not clear
             }
@@ -192,16 +208,23 @@ public enum ProcessRunner {
     private final class Watchdog: @unchecked Sendable {
         let fired = Flag()
         let abandoned = Flag()
+        /// Raised when standard output passed its limit.
+        let overflowed = Flag()
 
         func arm(for process: Process, after timeout: TimeInterval) {
             DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) { [self] in
                 guard process.isRunning else { return }
                 fired.set()
-                process.terminate()
-                DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + killGrace) { [self] in
-                    if process.isRunning { killHard(process) }
-                    abandoned.set()
-                }
+                stop(process)
+            }
+        }
+
+        /// Ends `process` now: `SIGTERM`, then `SIGKILL` after ``killGrace``, then `abandoned`.
+        func stop(_ process: Process) {
+            if process.isRunning { process.terminate() }
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + killGrace) { [self] in
+                if process.isRunning { killHard(process) }
+                abandoned.set()
             }
         }
 
