@@ -70,9 +70,16 @@ public struct RecencyFormatter {
             return now.timeIntervalSince(date) < 60
                 ? relative.localizedString(fromTimeInterval: 0) : relative.localizedString(for: date, relativeTo: now)
         }
-        if let start = calendar.date(byAdding: .day, value: -1, to: today), date >= start { return yesterday.string(from: date) }
+        if let start = calendar.date(byAdding: .day, value: -1, to: today), date >= start { return yesterdayString(date, today: today) }
         if let start = calendar.date(byAdding: .day, value: -6, to: today), date >= start { return weekday.string(from: date) }
         return dated(date, now: now)
+    }
+
+    /// "Yesterday at 14:05". Relative date formatting names the day from the Mac's clock, never from
+    /// `now`, so the moment is moved onto the clock's yesterday first, keeping its time of day.
+    private func yesterdayString(_ date: Date, today: Date) -> String {
+        let shift = calendar.dateComponents([.day], from: today, to: calendar.startOfDay(for: Date())).day ?? 0
+        return yesterday.string(from: calendar.date(byAdding: .day, value: shift, to: date) ?? date)
     }
 
     /// `date` in full, with seconds and the time zone.
