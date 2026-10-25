@@ -60,6 +60,7 @@ public struct Preference<Value> {
         self.store = store
         encode = { $0 }
         value = (store.object(forKey: key) as? Value) ?? defaultValue
+        PreferenceDefaults.record(key, default: defaultValue)
     }
 
     /// A setting stored as its raw value, such as an enum of modes. A stored raw value that no
@@ -71,6 +72,7 @@ public struct Preference<Value> {
         self.store = store
         encode = { $0.rawValue }
         value = (store.object(forKey: key) as? Value.RawValue).flatMap(Value.init(rawValue:)) ?? defaultValue
+        PreferenceDefaults.record(key, default: defaultValue.rawValue)
     }
 
     /// Whether the person (or the app) has written this setting, as opposed to reading its default.

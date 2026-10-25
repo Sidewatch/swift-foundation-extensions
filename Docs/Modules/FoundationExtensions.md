@@ -25,6 +25,7 @@ otherwise re-declare: one home, tested once.
 | `defaults.bool(forKey:default:)` (and Int, Double, String) | a stored value, or the default when never written |
 | `Debouncer` | the last of a burst of actions, once, after a quiet delay |
 | `RecencyFormatter` | a moment for a list of recent things, in the locale's words: "now", "12 min ago", "Yesterday at 14:05", "Mon 09:00", "22 Oct", "31 Dec 2025"; never "in 5 min" for a moment ahead of now; `full(_:)` with seconds and zone. Make one per list |
+| `PreferenceDefaults` | the default each `@Preference` declaration reads as, by key, recorded as it is created: `isDefault(_:forKey:)` says whether a stored value (nil when unwritten) is that default, nil for a key never declared; `isDeclared(_:)`. For checking a Restore Defaults without a key list of its own |
 | `AsyncBridge.wait` | an async result from synchronous code on a worker thread |
 
 ```swift
