@@ -55,3 +55,4 @@ Probed, with the outcomes, so nobody re-tests them:
 - 17 Sep 2026 — full audit (app + all 20 libraries), Claude with David.
 - 18 Sep 2026 — logic review (every source and test file, line by line), Claude with David.
 - 9 Oct 2026 — timeout against a pipe-holding grandchild, `removing:` for inherited variables (see above).
+- 13 Nov 2026 — review. Fixed: a child that exited leaving a descendant with its pipes open (a hook's `watch &`) held `run` until the descendant died, timeout or not: a drain now ends at the first idle tick after the child itself has exited. And input a child never read ended the calling process: the write descriptor sets `F_SETNOSIGPIPE` and the throwing `write(contentsOf:)` is used. Two tests in `SubprocessTests`, each failing on the code before (the second by ending the test process).

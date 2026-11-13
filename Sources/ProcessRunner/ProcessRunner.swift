@@ -103,11 +103,16 @@ public enum ProcessRunner {
         let inPipe: Pipe? = input == nil ? nil : Pipe()
         if let inPipe { process.standardInput = inPipe }
 
+        // Raised when the child itself is gone. A descendant it left behind (a hook's `watch &`)
+        // can hold the pipes open for as long as it lives; once the child has exited and a pipe
+        // has nothing more to read, its drain stops waiting for an end that is not coming.
+        let watchdog = Watchdog()
+        process.terminationHandler = { _ in watchdog.exited.set() }
+
         do { try process.run() } catch { return Result(status: -1, stdout: Data(), stderr: Data()) }
 
         if let inPipe, let input { feed(input, into: inPipe) }
 
-        let watchdog = Watchdog()
         if let timeout { watchdog.arm(for: process, after: timeout) }
 
         // Drain BOTH streams concurrently, then wait: this ordering is the whole point of the
@@ -118,7 +123,7 @@ public enum ProcessRunner {
         group.enter()
         DispatchQueue.global(qos: .utility).async {
             sink.setOut(
-                drain(outPipe.fileHandleForReading, until: watchdog.abandoned, limit: outputLimit) {
+                drain(outPipe.fileHandleForReading, until: watchdog.abandoned, exited: watchdog.exited, limit: outputLimit) {
                     watchdog.overflowed.set()
                     watchdog.stop(process)
                 })
@@ -126,7 +131,7 @@ public enum ProcessRunner {
         }
         group.enter()
         DispatchQueue.global(qos: .utility).async {
-            sink.setErr(drain(errPipe.fileHandleForReading, until: watchdog.abandoned))
+            sink.setErr(drain(errPipe.fileHandleForReading, until: watchdog.abandoned, exited: watchdog.exited))
             group.leave()
         }
         group.wait()
@@ -151,9 +156,15 @@ public enum ProcessRunner {
 
     /// Writes `input` to the child's stdin on a background hop and closes it: a child that
     /// never reads stdin would otherwise block this thread before draining of its output starts.
+    ///
+    /// A child that exits without reading it all leaves a pipe nobody reads. Writing to one sends
+    /// `SIGPIPE`, which ends the whole process unless the descriptor opts out, and Foundation's
+    /// non-throwing `write(_:)` raises an exception for the error that follows: the descriptor
+    /// opts out and the throwing write is used, so the rest of the input is simply dropped.
     private static func feed(_ input: Data, into pipe: Pipe) {
         DispatchQueue.global(qos: .utility).async {
-            pipe.fileHandleForWriting.write(input)
+            _ = fcntl(pipe.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
+            try? pipe.fileHandleForWriting.write(contentsOf: input)
             try? pipe.fileHandleForWriting.close()
         }
     }
@@ -163,8 +174,12 @@ public enum ProcessRunner {
     /// until more than `limit` bytes came: then the first `limit` are kept and `onLimit` runs.
     ///
     /// Polls in short ticks so the abandon flag is noticed; a stream that reaches EOF (the
-    /// normal case) returns at once.
-    private static func drain(_ handle: FileHandle, until abandoned: Flag, limit: Int? = nil, onLimit: () -> Void = {}) -> Data {
+    /// normal case) returns at once. Once `exited` is raised (the child itself is gone) a tick
+    /// with nothing to read ends the drain: whatever the child wrote is already in the pipe, and
+    /// what still holds it open is a descendant nobody is waiting for.
+    private static func drain(
+        _ handle: FileHandle, until abandoned: Flag, exited: Flag, limit: Int? = nil, onLimit: () -> Void = {}
+    ) -> Data {
         let fd = handle.fileDescriptor
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 64 * 1024)
@@ -173,7 +188,10 @@ public enum ProcessRunner {
             pollee.revents = 0
             let ready = poll(&pollee, 1, 200)
             if ready < 0 { if errno == EINTR { continue } else { break } }
-            if ready == 0 { continue }
+            if ready == 0 {
+                if exited.value { break }
+                continue
+            }
             let count = buffer.withUnsafeMutableBytes { read(fd, $0.baseAddress, $0.count) }
             if count > 0 {
                 data.append(contentsOf: buffer[0..<count])
@@ -208,6 +226,8 @@ public enum ProcessRunner {
     private final class Watchdog: @unchecked Sendable {
         let fired = Flag()
         let abandoned = Flag()
+        /// Raised when the child has exited, however it did.
+        let exited = Flag()
         /// Raised when standard output passed its limit.
         let overflowed = Flag()
 

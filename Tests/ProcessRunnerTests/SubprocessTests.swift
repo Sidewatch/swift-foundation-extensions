@@ -87,4 +87,25 @@ final class ProcessRunnerTests: XCTestCase {
         XCTAssertFalse(r.timedOut)
         XCTAssertEqual(r.trimmedOutput, "hi")
     }
+
+    func testAChildThatLeavesAProcessHoldingItsOutputStillReturns() {
+        // A hook that backgrounds a watcher: the shell exits at once, the sleeper keeps the pipes.
+        let started = Date()
+        let result = ProcessRunner.run("/bin/sh", ["-c", "sleep 20 & echo done"])
+        XCTAssertLessThan(Date().timeIntervalSince(started), 10, "the caller is not held for the sleeper's life")
+        XCTAssertEqual(result.status, 0)
+        XCTAssertEqual(String(decoding: result.stdout, as: UTF8.self), "done\n")
+        XCTAssertFalse(result.timedOut)
+    }
+
+    func testInputAChildNeverReadsIsDroppedNotFatal() {
+        // More than a pipe holds, into a child that exits without reading: the write meets a
+        // pipe with no reader, which must end neither this process nor the call.
+        let input = Data(repeating: 0x41, count: 4 << 20)
+        for _ in 0..<8 {
+            let result = ProcessRunner.run("/usr/bin/true", [], input: input)
+            XCTAssertEqual(result.status, 0)
+        }
+        Thread.sleep(forTimeInterval: 0.5)  // the writes run behind the calls
+    }
 }
