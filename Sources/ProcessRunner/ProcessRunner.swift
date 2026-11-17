@@ -107,7 +107,11 @@ public enum ProcessRunner {
         // can hold the pipes open for as long as it lives; once the child has exited and a pipe
         // has nothing more to read, its drain stops waiting for an end that is not coming.
         let watchdog = Watchdog()
-        do { try process.run() } catch { return Result(status: -1, stdout: Data(), stderr: Data()) }
+        do { try process.run() } catch {
+            let cause = error as NSError
+            reportFailure(of: executable, "could not launch (\(cause.domain) \(cause.code))")
+            return Result(status: -1, stdout: Data(), stderr: Data())
+        }
         // Set only once the child runs: Foundation keeps the handler of a process that never
         // launched, and with it the watchdog it holds (a launch refused at the descriptor limit leaked
         // one per call). A child that exited before the handler was set is caught by the check after it.
@@ -139,6 +143,7 @@ public enum ProcessRunner {
         }
         group.wait()
         process.waitUntilExit()
+        if watchdog.fired.value, let timeout { reportFailure(of: executable, "timed out after \(Int(timeout)) s") }
         // Close the read ends now rather than when the pipes are freed: the watchdog's deadline,
         // an autorelease pool or a caller's reference can keep them alive long after the tool
         // exited, and a process that runs tools often then reaches its descriptor limit, where
@@ -148,6 +153,25 @@ public enum ProcessRunner {
         return Result(
             status: process.terminationStatus, stdout: sink.out, stderr: sink.err,
             timedOut: watchdog.fired.value, truncated: watchdog.overflowed.value)
+    }
+
+    /// Sets who hears of a run that could not launch or was ended at its timeout — a host's
+    /// diagnostics. The handler gets the tool's NAME (never its path or arguments) and the reason,
+    /// on whichever thread the run was made from. Nil stops the reports.
+    public static func observeFailures(_ handler: (@Sendable (_ tool: String, _ reason: String) -> Void)?) {
+        failureLock.lock()
+        failureHandler = handler
+        failureLock.unlock()
+    }
+
+    private static let failureLock = NSLock()
+    nonisolated(unsafe) private static var failureHandler: (@Sendable (String, String) -> Void)?
+
+    private static func reportFailure(of executable: String, _ reason: String) {
+        failureLock.lock()
+        let handler = failureHandler
+        failureLock.unlock()
+        handler?((executable as NSString).lastPathComponent, reason)
     }
 
     /// The inherited environment minus `removing`, plus `adding`, with `PATH` augmented on request.

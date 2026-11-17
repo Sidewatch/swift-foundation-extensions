@@ -22,3 +22,4 @@ Last full audit: **27 Sep 2026**: the package was created that day from the Side
 
 - 27 Sep 2026 — created; 13 tests, each helper mutation-verified (six mutants, six failures).
 - 9 Oct 2026 — `URL.realPath` (`realpath(3)`; the app's private copy and `FileRewrite`'s symlink handling move onto it). Test: `testRealPathResolvesLinksTheWayFSEventsNamesThem`; mutant: `resolvingSymlinksInPath().path` in its place fails the `/tmp` → `/private/tmp` assertion.
+- 17 Nov 2026 — `DiagnosticLog` and `ProcessResources` added (see the module table). `DiagnosticLogTests` (five; mutants caught: no rate limit, no cap, a cut mid-line, the skipped count lost), `ProcessResourcesTests` (two).
