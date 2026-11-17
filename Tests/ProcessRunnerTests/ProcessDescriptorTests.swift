@@ -2,7 +2,7 @@
 //  ProcessDescriptorTests.swift
 //  ProcessRunnerTests
 //
-//  A finished run gives back every descriptor it opened.
+//  A finished run gives back every descriptor and every object it made.
 //
 //  Created by David Sherlock on 11/17/26.
 //  Copyright © 2026 ArrayPress Limited. MIT licence.
@@ -32,6 +32,22 @@ final class ProcessDescriptorTests: XCTestCase {
             XCTAssertTrue(ProcessRunner.run("/bin/echo", ["hi"], timeout: 60).succeeded)
         }
         XCTAssertLessThanOrEqual(left, 2, "a finished run kept \(left) descriptors open")
+    }
+
+    /// A launch that fails keeps nothing: Foundation holds the termination handler of a process that
+    /// never ran, and the handler once held the run's watchdog (four flags and their locks, about
+    /// 600 bytes a call: 200 MB after a day of launches refused at the descriptor limit).
+    func testAFailedLaunchLeavesNothingBehind() {
+        func bytesInUse() -> Int {
+            var stats = malloc_statistics_t()
+            malloc_zone_statistics(nil, &stats)
+            return stats.size_in_use
+        }
+        for _ in 0..<100 { autoreleasepool { _ = ProcessRunner.run("/nonexistent/tool", []) } }
+        let before = bytesInUse()
+        for _ in 0..<2_000 { autoreleasepool { XCTAssertFalse(ProcessRunner.run("/nonexistent/tool", []).launched) } }
+        let grown = bytesInUse() - before
+        XCTAssertLessThan(grown, 300_000, "2,000 failed launches kept \(grown) bytes")
     }
 
     /// The same without a pool around the call: the read ends close even while the `Pipe`

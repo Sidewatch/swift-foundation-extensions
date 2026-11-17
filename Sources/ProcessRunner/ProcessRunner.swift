@@ -107,9 +107,12 @@ public enum ProcessRunner {
         // can hold the pipes open for as long as it lives; once the child has exited and a pipe
         // has nothing more to read, its drain stops waiting for an end that is not coming.
         let watchdog = Watchdog()
-        process.terminationHandler = { _ in watchdog.exited.set() }
-
         do { try process.run() } catch { return Result(status: -1, stdout: Data(), stderr: Data()) }
+        // Set only once the child runs: Foundation keeps the handler of a process that never
+        // launched, and with it the watchdog it holds (a launch refused at the descriptor limit leaked
+        // one per call). A child that exited before the handler was set is caught by the check after it.
+        process.terminationHandler = { _ in watchdog.exited.set() }
+        if !process.isRunning { watchdog.exited.set() }
 
         if let inPipe, let input { feed(input, into: inPipe) }
 
