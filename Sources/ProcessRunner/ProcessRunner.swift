@@ -136,6 +136,12 @@ public enum ProcessRunner {
         }
         group.wait()
         process.waitUntilExit()
+        // Close the read ends now rather than when the pipes are freed: the watchdog's deadline,
+        // an autorelease pool or a caller's reference can keep them alive long after the tool
+        // exited, and a process that runs tools often then reaches its descriptor limit, where
+        // every `open(2)` it makes (reading a file, launching the next tool) fails.
+        try? outPipe.fileHandleForReading.close()
+        try? errPipe.fileHandleForReading.close()
         return Result(
             status: process.terminationStatus, stdout: sink.out, stderr: sink.err,
             timedOut: watchdog.fired.value, truncated: watchdog.overflowed.value)
@@ -231,9 +237,11 @@ public enum ProcessRunner {
         /// Raised when standard output passed its limit.
         let overflowed = Flag()
 
+        /// Holds `process` weakly: a run that finished long before its deadline must not keep the
+        /// `Process`, and the pipes it holds, alive until then.
         func arm(for process: Process, after timeout: TimeInterval) {
-            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) { [self] in
-                guard process.isRunning else { return }
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) { [self, weak process] in
+                guard let process, process.isRunning else { return }
                 fired.set()
                 stop(process)
             }
